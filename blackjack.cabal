@@ -40,6 +40,8 @@ library
       base >=4.7 && <5
     , gloss
     , gloss-juicy
+    , random
+    , random-shuffle
   default-language: Haskell2010
 
 executable blackjack-exe
@@ -54,6 +56,8 @@ executable blackjack-exe
     , blackjack
     , gloss
     , gloss-juicy
+    , random
+    , random-shuffle
   default-language: Haskell2010
 
 test-suite blackjack-test
@@ -69,4 +73,6 @@ test-suite blackjack-test
     , blackjack
     , gloss
     , gloss-juicy
+    , random
+    , random-shuffle
   default-language: Haskell2010

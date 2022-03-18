@@ -8,20 +8,31 @@ loadImages = do
   -- Just imgBackground <- loadJuicyPNG "img/background.png"
   Just imgButton <- loadJuicyPNG "img/button.png"
   cardImages <- loadCards
+  Just imgBetButton <- loadJuicyPNG "img/betButton.png"
+  Just imgHitButton <- loadJuicyPNG "img/hitButton.png"
+  Just imgStandButton <- loadJuicyPNG "img/standButton.png"
+  Just imgDoubleButton <- loadJuicyPNG "img/doubleButton.png"
   return
     Images
       {
       -- background = imgBackground,
         imageButton = imgButton,
-        imageCards = cardImages
-
+        imageCards = cardImages,
+        imageBetButton = imgBetButton,
+        imageHitButton = imgHitButton,
+        imageStandButton = imgStandButton,
+        imageDoubleButton = imgDoubleButton
       }
 
 data Images = Images
   { 
     -- background :: Picture,
     imageButton :: Picture,
-    imageCards :: [Picture]
+    imageCards :: [Picture],
+    imageBetButton :: Picture,
+    imageHitButton :: Picture,
+    imageStandButton :: Picture,
+    imageDoubleButton :: Picture
   }
 
 loadCards :: IO [Picture]
