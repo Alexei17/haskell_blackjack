@@ -29,7 +29,6 @@ library
       ImageLoader
       Lib
       MysteriousConstants
-      Offsets
       Rendering
       State
   other-modules:

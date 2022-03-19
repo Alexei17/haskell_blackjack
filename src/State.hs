@@ -18,7 +18,7 @@ createGameStateWith imgs = Game {
     }
 
 initInitialPlayer :: Player
-initInitialPlayer = Player { hand = emptyHand, balance = 0, currentBet = 0 }
+initInitialPlayer = Player { hand = emptyHand, balance = 0, currentBet = 0, playerPos = 0 }
 
 emptyHand :: Hand
 emptyHand = Hand { cards = [] , size = 0 }
@@ -37,7 +37,8 @@ data State = BetPhase | Running | GameOver | TakeActionPhase deriving (Eq, Show)
 data Player = Player {
     hand :: Hand,
     balance :: Int,
-    currentBet :: Int
+    currentBet :: Int,
+    playerPos :: Int
 } deriving (Show)
 
 data Hand = Hand {
@@ -50,9 +51,16 @@ data Card = Card {
               cardSuit :: CardSuit
 } deriving (Eq, Show, Ord)
 
+instance Enum Card where
+  toEnum index = Card
+    { cardRank = toEnum $ index `div` 4
+    , cardSuit     = toEnum $ index `mod` 4
+    }
+  fromEnum card = fromEnum (cardRank card) * 4 + fromEnum (cardSuit card)
+
+
 data CardRank
-    = Ace
-    | Two
+    = Two
     | Three
     | Four
     | Five
@@ -60,17 +68,18 @@ data CardRank
     | Seven
     | Eight
     | Nine
-    | Ten
+    | Ace
     | Jack
-    | Queen
-    | King 
+    | King
+    | Queen 
+    | Ten
     deriving (Eq, Ord, Bounded, Enum, Show)
 
 data CardSuit
     = Clubs
-    | Spades
     | Diamonds
     | Hearts
+    | Spades
     deriving (Eq, Ord, Bounded, Enum, Show)
 
 cardRanks :: [CardRank]

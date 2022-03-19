@@ -2,7 +2,7 @@ module Handlers where
 import State
 import Graphics.Gloss.Interface.IO.Game
 import Debug.Trace
-import Offsets
+import MysteriousConstants
 
 debug = flip trace
 
@@ -16,20 +16,39 @@ handleClick :: (Float, Float) -> BlackjackGame -> BlackjackGame
 handleClick coords state =
         case buttonHitted of
             Just Bet -> hittedBetButton state `debug` show (players state !! 0)
+            Just Hit -> hittedHitButton state
             _ -> state `debug` show (players state !! 0)
             `debug` show buttonHitted
     where
         buttonHitted = checkButtonHit coords state `debug` show coords
 
+
+hittedHitButton :: BlackjackGame -> BlackjackGame
+hittedHitButton state = state { 
+    players = addCardsToPlayer (players state) 0 [head topCards],
+    dealer = addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3],
+    deck = newDeck
+    }
+    where
+    (topCards, newDeck) = getTopCards 1 state ([], deck state)
+
 hittedBetButton :: BlackjackGame -> BlackjackGame
 hittedBetButton state = state {gameState = TakeActionPhase,
-        players = addCardsToPlayer (players state) 0 [head topCards, topCards !! 1]
+        players = addCardsToPlayer (players state) 0 [head topCards, topCards !! 1], -- Add two cards to player
+        dealer = addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3], -- Add cards to dealer
+        deck = newDeck
         }
     where
     (topCards, newDeck) = getTopCards 4 state ([], deck state)
 
+addCardsToDealer :: Player -> [Card] -> Player
+addCardsToDealer player cardsToAdd = player { hand = Hand { size = size (hand player) + length cardsToAdd ,
+                                                            cards = cards (hand player) ++ cardsToAdd }}
 
-addCardsToPlayer :: [Player] -> Int -> [Card] -> [Player]
+addCardsToPlayer :: [Player] -- ^ Player list
+  -> Int -- ^ Player to modify (player[int])
+  -> [Card] -- ^ Cards to add
+  -> [Player]
 addCardsToPlayer players n cardsToAdd = replaceNth n (player { hand =
                                                                      Hand {
                                                                          size = size (hand player) + length cardsToAdd,
