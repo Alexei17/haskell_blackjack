@@ -2,30 +2,31 @@ module ImageLoader where
 import Graphics.Gloss.Juicy (loadJuicyPNG)
 import MysteriousConstants
 import Graphics.Gloss.Data.Picture
+import Data.Maybe
 
 loadImages :: IO Images
 loadImages = do
   -- Just imgBackground <- loadJuicyPNG "img/background.png"
-  Just imgButton <- loadJuicyPNG "img/button.png"
+  imgButton <- loadJuicyPNG "img/button.png"
   cardImages <- loadCards
-  Just imgBetButton <- loadJuicyPNG "img/betButton.png"
-  Just imgHitButton <- loadJuicyPNG "img/hitButton.png"
-  Just imgStandButton <- loadJuicyPNG "img/standButton.png"
-  Just imgDoubleButton <- loadJuicyPNG "img/doubleButton.png"
+  imgBetButton <- loadJuicyPNG "img/betButton.png"
+  imgHitButton <- loadJuicyPNG "img/hitButton.png"
+  imgStandButton <- loadJuicyPNG "img/standButton.png"
+  imgDoubleButton <- loadJuicyPNG "img/doubleButton.png"
   return
     Images
       {
       -- background = imgBackground,
-        imageButton = imgButton,
+        imageButton = fromMaybe Blank imgButton,
         imageCards = cardImages,
-        imageBetButton = imgBetButton,
-        imageHitButton = imgHitButton,
-        imageStandButton = imgStandButton,
-        imageDoubleButton = imgDoubleButton
+        imageBetButton = fromMaybe Blank imgBetButton,
+        imageHitButton = fromMaybe Blank imgHitButton,
+        imageStandButton = fromMaybe Blank imgStandButton,
+        imageDoubleButton = fromMaybe Blank imgDoubleButton
       }
 
 data Images = Images
-  { 
+  {
     -- background :: Picture,
     imageButton :: Picture,
     imageCards :: [Picture],
@@ -36,16 +37,10 @@ data Images = Images
   }
 
 loadCards :: IO [Picture]
-loadCards = do 
+loadCards = do
   pictures <- sequence loadedList
-  return $ map unwrapPicture pictures
+  return $ map (fromMaybe Blank) pictures
   where
     loadedList = map
       (\x -> loadJuicyPNG $ "img/cards/" ++ x ++ ".png")
       cardPNGNames
-
-
-unwrapPicture :: Maybe Picture -> Picture
-unwrapPicture image = case image of
-  Nothing  -> blank
-  Just img -> img

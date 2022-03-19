@@ -2,10 +2,11 @@ module Lib
 where
 
 import Graphics.Gloss
-import State (initGameState, BlackjackGame)
+import State (initGameState, BlackjackGame (randomGen))
 import ImageLoader
 import Rendering
 import Handlers
+import System.Random
 
 
 width, height, offset :: Int
@@ -28,7 +29,8 @@ runGame :: IO ()
 runGame = do
   bjGameState <- initGameState
   images <- loadImages
-  play window backgroundColor 30 bjGameState drawScreen handleInput updateGame
+  rndGen <- newStdGen
+  play window backgroundColor 30 bjGameState {randomGen = rndGen} drawScreen handleInput updateGame
 
 updateGame :: Float -> BlackjackGame -> BlackjackGame
 updateGame timePassed state = state

@@ -13,8 +13,8 @@ createGameStateWith imgs = Game {
     players = [initInitialPlayer], 
     dealer = initInitialPlayer, 
     gameState = BetPhase,
-    images = imgs
-    -- deck = createShuffledDeck
+    images = imgs,
+    deck = Hand { size = 0, cards = [] }
     }
 
 initInitialPlayer :: Player
@@ -28,20 +28,22 @@ data BlackjackGame = Game {
     dealer :: Player,
     gameState :: State,
     images :: Images,
-    deck :: Hand
+    deck :: Hand,
+    randomGen :: StdGen,
+    selectedPlayer :: Int
 }
 
-data State = BetPhase | Running | GameOver | TakeActionPhase deriving (Eq)
+data State = BetPhase | Running | GameOver | TakeActionPhase deriving (Eq, Show)
 data Player = Player {
     hand :: Hand,
     balance :: Int,
     currentBet :: Int
-}
+} deriving (Show)
 
 data Hand = Hand {
     size :: Int,
     cards :: [Card]
-}
+} deriving (Show)
 
 data Card = Card {
               cardRank :: CardRank,
@@ -78,15 +80,18 @@ cardSuits :: [CardSuit]
 cardSuits = [minBound..maxBound]
 
 
-shuffle :: [a] -> IO [a]
-shuffle [] = return []
-shuffle xs = do randomPosition <- getStdRandom (randomR (0, length xs - 1))
-                let (left, (a:right)) = splitAt randomPosition xs
-                fmap (a:) (shuffle (left ++ right))
+shuffle gen [] = [] 
+shuffle gen list = randomElem : shuffle newGen newList
+  where 
+   randomTuple = randomR (0,(length list) - 1) gen
+   randomIndex = fst randomTuple
+   newGen      = snd randomTuple
+   randomElem  = list !! randomIndex
+   newList     = take randomIndex list ++ drop (randomIndex+1) list
 
 
-createShuffledDeck :: Hand
-createShuffledDeck = Hand {
+createShuffledDeck :: BlackjackGame -> Hand
+createShuffledDeck state = Hand {
     size = 52,
-    cards = Card <$> cardRanks <*> cardSuits
+    cards = shuffle (randomGen state) (Card <$> cardRanks <*> cardSuits)
 }
