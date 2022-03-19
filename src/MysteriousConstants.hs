@@ -19,6 +19,5 @@ bufferBetweenCards = -60
 playersCardsCenter :: [(Float, Float)]
 playersCardsCenter = [(0, -410)]
 --                      p0
-
-
-
+dealerCardsCenter :: (Float, Float)
+dealerCardsCenter = (0, 410)

@@ -26,7 +26,6 @@ handleClick coords state =
 hittedHitButton :: BlackjackGame -> BlackjackGame
 hittedHitButton state = state { 
     players = addCardsToPlayer (players state) 0 [head topCards],
-    dealer = addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3],
     deck = newDeck
     }
     where

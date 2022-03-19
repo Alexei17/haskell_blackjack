@@ -31,12 +31,26 @@ drawButtons state
     | otherwise = [uncurry translate betButtonOffset (imageButton $ images state)]
 
 drawCards :: BlackjackGame -> [Picture]
-drawCards state = concatMap (\player -> drawCardsForPlayer player (imageCards (images state))) (players state)
+drawCards state = drawCardsForDealer (dealer state) (imageCards (images state)) ++ concatMap (\player -> drawCardsForPlayer player (imageCards (images state))) (players state)
 
 drawCardsForPlayer :: Player -> [Picture] -> [Picture]
 drawCardsForPlayer player imageCards = map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) zippedList
     where
-        cardsAreaCenter = playersCardsCenter !! (playerPos player)
+        cardsAreaCenter = playersCardsCenter !! playerPos player
+        cardsAmount = size (hand player)
+        cardWidth = fst cardSize
+        cardsAreaWidth = fromIntegral cardsAmount * cardWidth + (fromIntegral cardsAmount - 1) * bufferBetweenCards
+        cardsOffsetFromLeft = [(cardWidth / 2),(cardWidth / 2) + cardWidth + (bufferBetweenCards)..cardsAreaWidth-50]
+        card_xAxis_CenteresAt0 = map (subtract (cardWidth + (bufferBetweenCards / 2))) cardsOffsetFromLeft
+        cardxAxisCenters = map (+ (fst cardsAreaCenter - ((fromIntegral cardsAmount - 2) * (cardWidth / 2 + bufferBetweenCards / 2)))) card_xAxis_CenteresAt0
+        zippedList = zipWith (\x y -> (x,y)) (cards (hand player)) cardxAxisCenters
+        -- ^ zippedList = [(Card, Float)] aka [(Card, xPos)]
+        cardsAreaY = snd cardsAreaCenter
+
+drawCardsForDealer :: Player -> [Picture] -> [Picture]
+drawCardsForDealer player imageCards = map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) zippedList
+    where
+        cardsAreaCenter = dealerCardsCenter
         cardsAmount = size (hand player)
         cardWidth = fst cardSize
         cardsAreaWidth = fromIntegral cardsAmount * cardWidth + (fromIntegral cardsAmount - 1) * bufferBetweenCards
