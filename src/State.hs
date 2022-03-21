@@ -14,11 +14,12 @@ createGameStateWith imgs = Game {
     dealer = initInitialPlayer,
     gameState = BetPhase,
     images = imgs,
-    deck = Hand { size = 0, cards = [] }
+    deck = Hand { size = 0, cards = [] },
+    selectedPlayer = 0
     }
 
 initInitialPlayer :: Player
-initInitialPlayer = Player { hand = emptyHand, balance = 0, currentBet = 0, playerPos = 0, finished = False, bust = False }
+initInitialPlayer = Player { hand = emptyHand, balance = 0, currentBet = 0, playerPos = 0, finished = False, bust = False, hasWon = NotDetermined }
 
 emptyHand :: Hand
 emptyHand = Hand { cards = [] , size = 0 }
@@ -30,15 +31,15 @@ data BlackjackGame = Game {
     images :: Images,
     deck :: Hand,
     randomGen :: StdGen,
-    selectedPlayer :: Int,
-    winner :: Winner
-}
+    selectedPlayer :: Int
+    -- winner :: Winner
+} deriving Show
 
 data Winner = Winner {
     present :: Bool,
     typeOf :: PlayerType,
     winners :: [Player]
-}
+} deriving Show
 
 data PlayerType = TypeDealer | TypePlayer deriving Show
 data State = BetPhase | Running | GameOver | TakeActionPhase deriving (Eq, Show)
@@ -48,8 +49,11 @@ data Player = Player {
     currentBet :: Int,
     playerPos :: Int,
     finished :: Bool,
-    bust :: Bool
+    bust :: Bool,
+    hasWon :: WinType
 } deriving (Show)
+
+data WinType = T | F | Tie | Blackjack | NotDetermined deriving Show
 
 data Hand = Hand {
     size :: Int,
@@ -102,7 +106,7 @@ cardSuits = [minBound..maxBound]
 shuffle gen [] = []
 shuffle gen list = randomElem : shuffle newGen newList
   where
-   randomTuple = randomR (0,(length list) - 1) gen
+   randomTuple = randomR (0,length list - 1) gen
    randomIndex = fst randomTuple
    newGen      = snd randomTuple
    randomElem  = list !! randomIndex

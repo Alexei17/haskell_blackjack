@@ -10,7 +10,7 @@ debug = flip trace
 handleInput :: Event -> BlackjackGame -> BlackjackGame
 handleInput event state =
     case event of
-        EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state
+        EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state `debug` show state
         _ -> state
 
 handleClick :: (Float, Float) -> BlackjackGame -> BlackjackGame
@@ -18,6 +18,7 @@ handleClick coords state =
         case buttonHitted of
             Just Bet -> hittedBetButton state `debug` show (players state !! 0)
             Just Hit -> checkIfBust (hittedHitButton state) -- checkIfBust checks for busted player and/or finished players.
+            -- Just Stand -> hittedStandButton state
             _ -> state `debug` show (players state !! 0)
             `debug` show buttonHitted
     where
@@ -35,14 +36,30 @@ passToDealerIfAllFinished state = if allPlayersFinished then drawCardsForDealer 
 
 drawCardsForDealer :: BlackjackGame -> BlackjackGame
 drawCardsForDealer state
-    | dealerHandSize > 21 = state { dealer = (dealer state) { bust = True, finished = True }, gameState = GameOver }
-    | dealerHandSize >= 17 = state { dealer = (dealer state) { finished = True }, gameState = GameOver }
+    | dealerHandSize > 21 = determineWinner (state { dealer = (dealer state) { bust = True, finished = True }, gameState = GameOver })
+    | dealerHandSize >= 17 = determineWinner (state { dealer = (dealer state) { finished = True }, gameState = GameOver })
     | otherwise = drawCardsForDealer(state {   dealer = addCardsToDealer (dealer state) topCards,
                             deck = newDeck
                             })
     where
     dealerHandSize = getNumberByHand (hand (dealer state))
     (topCards, newDeck) = getTopCards 1 state ([], deck state)
+
+determineWinner :: BlackjackGame -> BlackjackGame
+determineWinner state
+    | bust (dealer state) = state { players = -- If dealer is bust, all non bust players win
+        map (\player -> if not (bust player) then player {hasWon = T} else player { hasWon = F }) (players state) }
+    | not (bust (dealer state)) = state { players =  -- If dealer is not bust, all players with a higher count win
+        map (\player ->
+            if not (bust player) && getNumberByHand (hand player) > dealerCount then player { hasWon = T }
+            else if not (bust player) && getNumberByHand (hand player) == dealerCount then player { hasWon = Tie }
+            else player { hasWon = F }
+                    ) (players state)
+        }
+    | otherwise = state -- No winner is present yet (this shouldn't happen)
+    where
+        dealerCount = getNumberByHand (hand (dealer state))
+
 
 hittedHitButton :: BlackjackGame -> BlackjackGame
 hittedHitButton state = state {
@@ -112,10 +129,12 @@ checkButtonHit coords state
         else Nothing `debug` show [x > fst (fst betHitbox), x < snd (fst betHitbox), y > fst (snd betHitbox), y < snd (snd betHitbox)]
     | gameState state == TakeActionPhase = if
         and [x > fst (fst hitHitbox), x < fst (snd hitHitbox),
-        y < snd (fst hitHitbox), y > snd (snd hitHitbox)] then Just Hit else if
+        y < snd (fst hitHitbox), y > snd (snd hitHitbox)] then Just Hit 
+        else if
         and [x > fst (fst standHitbox), x < fst (snd standHitbox),
         y < snd (fst standHitbox), y > snd (snd standHitbox)] then Just Stand
         else Nothing
+
 
 
     | otherwise = Nothing `debug` "nope2"
@@ -126,6 +145,7 @@ checkButtonHit coords state
         betHitbox = getHitbox betButtonOffset buttonSize
         hitHitbox = getHitbox hitButtonOffset buttonSize
         standHitbox = getHitbox standButtonOffset buttonSize
+
 
 -- Get hitbox coords: [Top left, Bottom right]
 getHitbox :: (Float, Float) -> (Float, Float) -> ((Float, Float), (Float, Float))

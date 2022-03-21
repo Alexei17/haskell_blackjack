@@ -3,16 +3,39 @@ import Graphics.Gloss
 import State
 import MysteriousConstants
 import ImageLoader
+import Data.Maybe
 
 -- gameAsPicture = pictures []
 drawScreen :: BlackjackGame -> Picture
 drawScreen state
     | gameState state == BetPhase = pictures (drawButtons state)
-    | gameState state == TakeActionPhase = pictures ((drawButtons state) ++ (drawCards state))
+    | gameState state == TakeActionPhase = pictures (drawButtons state ++ drawCards state)
+    | gameState state == GameOver = pictures (drawCards state ++ drawEndGameStatus state )
     | otherwise = pictures (drawCards state)
 
--- drawCards :: BlackjackGame -> Picture
--- drawCards state = translate 0 0 ((imageCards $ images state) !! 0)
+
+drawEndGameStatus :: BlackjackGame -> [Picture]
+drawEndGameStatus state = drawWonAndLostPerPlayer state ++ drawBusts state
+
+drawWonAndLostPerPlayer :: BlackjackGame -> [Picture]
+drawWonAndLostPerPlayer state = map
+    (\player -> uncurry translate (playersEndgameDrawCenter !! playerPos player) (imageToDrawByWinType state player)) (players state)
+
+drawBusts :: BlackjackGame -> [Picture]
+drawBusts state = mapMaybe (\player -> 
+    if bust player then 
+        Just (uncurry translate (playersEndgameBustsDrawCenter !! playerPos player) (imageBust $ images state))
+    else Nothing) 
+    (players state) ++ (if bust (dealer state) then
+        [uncurry translate dealerEndgameBustsDrawCenter (imageBust $ images state)] else [])
+
+imageToDrawByWinType :: BlackjackGame -> Player -> Picture
+imageToDrawByWinType state player = case hasWon player of
+        T -> imageYouWon $ images state
+        F -> imageYouLost $ images state
+        Tie -> imagePushed $ images state
+        Blackjack -> imageYouWon $ images state
+        _ -> imageYouLost $ images state
 
 drawButton :: BlackjackGame -> Picture
 drawButton state = uncurry translate betButtonOffset (imageButton $ images state)

@@ -16,8 +16,11 @@ cardSize = (100, 152)
 bufferBetweenCards :: Float
 bufferBetweenCards = -60
 
-playersCardsCenter :: [(Float, Float)]
+playersCardsCenter, playersEndgameDrawCenter, playersEndgameBustsDrawCenter :: [(Float, Float)]
 playersCardsCenter = [(0, -410)]
+playersEndgameDrawCenter = [(0, -300)]
+playersEndgameBustsDrawCenter = [(0, -250)]
 --                      p0
-dealerCardsCenter :: (Float, Float)
+dealerCardsCenter, dealerEndgameBustsDrawCenter :: (Float, Float)
 dealerCardsCenter = (0, 410)
+dealerEndgameBustsDrawCenter = (0, 300)
