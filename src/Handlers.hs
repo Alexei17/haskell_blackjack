@@ -18,7 +18,8 @@ handleClick coords state =
         case buttonHitted of
             Just Bet -> hittedBetButton state `debug` show (players state !! 0)
             Just Hit -> checkIfBust (hittedHitButton state) -- checkIfBust checks for busted player and/or finished players.
-            -- Just Stand -> hittedStandButton state
+            Just Stand -> hittedStandButton state
+            Just NewGame -> hittedNewGameButton state
             _ -> state `debug` show (players state !! 0)
             `debug` show buttonHitted
     where
@@ -60,6 +61,19 @@ determineWinner state
     where
         dealerCount = getNumberByHand (hand (dealer state))
 
+
+hittedNewGameButton :: BlackjackGame -> BlackjackGame
+hittedNewGameButton state = state { gameState = BetPhase,
+            players = map (\player -> player { hand = emptyHand, bust = False, hasWon = NotDetermined,
+            finished = False }) (players state),
+            dealer = (dealer state) { hand = emptyHand },
+            selectedPlayer = 0
+             }
+
+hittedStandButton :: BlackjackGame -> BlackjackGame
+hittedStandButton state = passToDealerIfAllFinished (state {
+    players = map (\player -> if playerPos player == selectedPlayer state then player {finished = True } else player ) (players state)
+})
 
 hittedHitButton :: BlackjackGame -> BlackjackGame
 hittedHitButton state = state {
@@ -120,7 +134,7 @@ removeFirst = \myList ->
         [] -> [] -- if the list is empty, return empty list
         x:xs -> xs -- split head and return remaining list
 
-data Button = Bet | Hit | Stand  deriving (Eq, Show)
+data Button = Bet | Hit | Stand | NewGame  deriving (Eq, Show)
 checkButtonHit :: (Float, Float) -> BlackjackGame -> Maybe Button
 checkButtonHit coords state
     | gameState state == BetPhase = if
@@ -129,14 +143,15 @@ checkButtonHit coords state
         else Nothing `debug` show [x > fst (fst betHitbox), x < snd (fst betHitbox), y > fst (snd betHitbox), y < snd (snd betHitbox)]
     | gameState state == TakeActionPhase = if
         and [x > fst (fst hitHitbox), x < fst (snd hitHitbox),
-        y < snd (fst hitHitbox), y > snd (snd hitHitbox)] then Just Hit 
+        y < snd (fst hitHitbox), y > snd (snd hitHitbox)] then Just Hit
         else if
         and [x > fst (fst standHitbox), x < fst (snd standHitbox),
         y < snd (fst standHitbox), y > snd (snd standHitbox)] then Just Stand
         else Nothing
-
-
-
+    | gameState state == GameOver = if
+        and [x > fst (fst startNewGameHitbox), x < fst (snd startNewGameHitbox),
+        y < snd (fst startNewGameHitbox), y > snd (snd startNewGameHitbox)] then Just NewGame
+        else Nothing
     | otherwise = Nothing `debug` "nope2"
 
     where
@@ -145,6 +160,7 @@ checkButtonHit coords state
         betHitbox = getHitbox betButtonOffset buttonSize
         hitHitbox = getHitbox hitButtonOffset buttonSize
         standHitbox = getHitbox standButtonOffset buttonSize
+        startNewGameHitbox = getHitbox (0,0) buttonSize
 
 
 -- Get hitbox coords: [Top left, Bottom right]

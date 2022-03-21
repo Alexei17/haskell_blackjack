@@ -5,9 +5,9 @@ cardPNGNames = ["2C","2D","2H","2S","3C","3D","3H","3S","4C","4D","4H","4S","5C"
 
 -- Offsets
 betButtonOffset, hitButtonOffset, standButtonOffset :: (Float, Float)
-betButtonOffset = (0, -300)
-hitButtonOffset = (-80, -300)
-standButtonOffset = (80, -300)
+betButtonOffset = (0, -250)
+hitButtonOffset = (-80, -250)
+standButtonOffset = (80, -250)
 
 buttonSize, cardSize :: (Float, Float)
 buttonSize = (150, 50)
@@ -16,11 +16,13 @@ cardSize = (100, 152)
 bufferBetweenCards :: Float
 bufferBetweenCards = -60
 
-playersCardsCenter, playersEndgameDrawCenter, playersEndgameBustsDrawCenter :: [(Float, Float)]
-playersCardsCenter = [(0, -410)]
-playersEndgameDrawCenter = [(0, -300)]
-playersEndgameBustsDrawCenter = [(0, -250)]
+playersCardsCenter, playersCardsNumberCenter, playersEndgameDrawCenter, playersEndgameBustsDrawCenter :: [(Float, Float)]
+playersCardsCenter = [(0, -360)]
+playersCardsNumberCenter = [(-20, -480)]
+playersEndgameDrawCenter = [(0, -250)]
+playersEndgameBustsDrawCenter = [(0, -200)]
 --                      p0
-dealerCardsCenter, dealerEndgameBustsDrawCenter :: (Float, Float)
+dealerCardsCenter, dealerCardsNumberCenter, dealerEndgameBustsDrawCenter :: (Float, Float)
 dealerCardsCenter = (0, 410)
+dealerCardsNumberCenter = (-20, 230)
 dealerEndgameBustsDrawCenter = (0, 300)

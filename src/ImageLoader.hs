@@ -18,6 +18,7 @@ loadImages = do
   imgYouLost <- loadJuicyPNG "img/youLost.png"
   imgStartNewGame <- loadJuicyPNG "img/startNewGame.png"
   imgPushed <- loadJuicyPNG "img/pushed.png"
+  imgBackCard <- loadJuicyPNG "img/backCard.png"
   return
     Images
       {
@@ -32,7 +33,8 @@ loadImages = do
         imageYouWon = fromMaybe Blank imgYouWon,
         imageYouLost = fromMaybe Blank imgYouLost,
         imagestartNewGame = fromMaybe Blank imgStartNewGame,
-        imagePushed = fromMaybe Blank imgPushed
+        imagePushed = fromMaybe Blank imgPushed,
+        imageBackCard = fromMaybe Blank imgBackCard
       }
 
 data Images = Images
@@ -48,7 +50,8 @@ data Images = Images
     imageYouWon :: Picture,
     imageYouLost :: Picture,
     imagestartNewGame :: Picture,
-    imagePushed :: Picture
+    imagePushed :: Picture,
+    imageBackCard :: Picture
   } deriving Show
 
 loadCards :: IO [Picture]

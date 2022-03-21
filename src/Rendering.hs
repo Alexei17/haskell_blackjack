@@ -15,17 +15,20 @@ drawScreen state
 
 
 drawEndGameStatus :: BlackjackGame -> [Picture]
-drawEndGameStatus state = drawWonAndLostPerPlayer state ++ drawBusts state
+drawEndGameStatus state = drawWonAndLostPerPlayer state ++ drawBusts state ++ drawStartNewGameButton state
+
+drawStartNewGameButton :: BlackjackGame -> [Picture]
+drawStartNewGameButton state = [translate 0 0 (imagestartNewGame $ images state)]
 
 drawWonAndLostPerPlayer :: BlackjackGame -> [Picture]
 drawWonAndLostPerPlayer state = map
     (\player -> uncurry translate (playersEndgameDrawCenter !! playerPos player) (imageToDrawByWinType state player)) (players state)
 
 drawBusts :: BlackjackGame -> [Picture]
-drawBusts state = mapMaybe (\player -> 
-    if bust player then 
+drawBusts state = mapMaybe (\player ->
+    if bust player then
         Just (uncurry translate (playersEndgameBustsDrawCenter !! playerPos player) (imageBust $ images state))
-    else Nothing) 
+    else Nothing)
     (players state) ++ (if bust (dealer state) then
         [uncurry translate dealerEndgameBustsDrawCenter (imageBust $ images state)] else [])
 
@@ -56,10 +59,12 @@ drawButtons state --n
     | otherwise = [uncurry translate betButtonOffset (imageButton $ images state)]
 
 drawCards :: BlackjackGame -> [Picture]
-drawCards state = drawCardsForDealer (dealer state) (imageCards (images state)) ++ concatMap (\player -> drawCardsForPlayer player (imageCards (images state))) (players state)
+drawCards state = drawCardsForDealer (dealer state) (imageCards (images state)) (images state) shouldHideCard ++ concatMap (\player -> drawCardsForPlayer player (imageCards (images state))) (players state)
+    where
+    shouldHideCard = gameState state == TakeActionPhase
 
 drawCardsForPlayer :: Player -> [Picture] -> [Picture]
-drawCardsForPlayer player imageCards = map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) zippedList
+drawCardsForPlayer player imageCards = drawPlayerCardCount player : map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) zippedList
     where
         cardsAreaCenter = playersCardsCenter !! playerPos player
         cardsAmount = size (hand player)
@@ -72,8 +77,22 @@ drawCardsForPlayer player imageCards = map (\(card,xPos) -> drawSingleCard card 
         -- ^ zippedList = [(Card, Float)] aka [(Card, xPos)]
         cardsAreaY = snd cardsAreaCenter
 
-drawCardsForDealer :: Player -> [Picture] -> [Picture]
-drawCardsForDealer player imageCards = map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) zippedList
+drawDealerCardCount :: Player -> Picture
+drawDealerCardCount player = uncurry translate dealerCardsNumberCenter number
+    where
+        number = drawSmallText white (show (getNumberByHand (hand player)))
+
+drawPlayerCardCount :: Player -> Picture
+drawPlayerCardCount player =  uncurry translate (playersCardsNumberCenter !! playerPos player) number
+    where
+        number = drawSmallText white (show (getNumberByHand (hand player)))
+
+drawCardsForDealer :: Player -> [Picture] -> Images -> Bool -> [Picture]
+drawCardsForDealer player imageCards images hideOneCard =
+    if hideOneCard
+        then drawSingleCard (fst (zippedList !! 0)) (snd (zippedList !! 0)) cardsAreaY imageCards :
+        [translate (snd (zippedList !! 1)) cardsAreaY (imageBackCard images)] -- Draw one hidden card.
+    else drawDealerCardCount player : map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) zippedList
     where
         cardsAreaCenter = dealerCardsCenter
         cardsAmount = size (hand player)
@@ -86,6 +105,10 @@ drawCardsForDealer player imageCards = map (\(card,xPos) -> drawSingleCard card 
         -- ^ zippedList = [(Card, Float)] aka [(Card, xPos)]
         cardsAreaY = snd cardsAreaCenter
 
-drawSingleCard :: Card -> Float -> Float -> [Picture] -> Picture
+drawSingleCard :: Card -> Float -> Float -> [Picture]  -> Picture
 drawSingleCard card x y imageCards = translate x y (imageCards !! (fromEnum $ card))
+-- drawSingleCard _ x y _ shouldHideCard = translate x y imageBackCard
 -- drawScreen state = pictures [imageButton $ images state]
+
+drawSmallText :: Color -> String -> Picture
+drawSmallText clr string =  color clr $ scale 0.25 0.25 (text string)
