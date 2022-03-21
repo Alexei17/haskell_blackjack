@@ -17,8 +17,10 @@ drawScreen state
 drawButton :: BlackjackGame -> Picture
 drawButton state = uncurry translate betButtonOffset (imageButton $ images state)
 
-drawButtons :: BlackjackGame -> [Picture]
-drawButtons state
+drawButtons :: BlackjackGame -- ^ State
+--   -> Int -- ^ Current selected player
+  -> [Picture]
+drawButtons state --n
     | gameState state == BetPhase =
         [
             uncurry translate betButtonOffset (imageBetButton $ images state)

@@ -3,6 +3,7 @@ import State
 import Graphics.Gloss.Interface.IO.Game
 import Debug.Trace
 import MysteriousConstants
+import Text.ParserCombinators.ReadPrec (reset)
 
 debug = flip trace
 
@@ -16,33 +17,59 @@ handleClick :: (Float, Float) -> BlackjackGame -> BlackjackGame
 handleClick coords state =
         case buttonHitted of
             Just Bet -> hittedBetButton state `debug` show (players state !! 0)
-            Just Hit -> hittedHitButton state
+            Just Hit -> checkIfBust (hittedHitButton state) -- checkIfBust checks for busted player and/or finished players.
             _ -> state `debug` show (players state !! 0)
             `debug` show buttonHitted
     where
         buttonHitted = checkButtonHit coords state `debug` show coords
 
+checkIfBust :: BlackjackGame -> BlackjackGame
+checkIfBust state = passToDealerIfAllFinished ( state { players = map (\player -> if getNumberByHand (hand player) > 21 then player {finished = True, bust = True} else player) (players state),
+                            dealer = if getNumberByHand (hand (dealer state)) > 21 then (dealer state) {finished = True, bust = True} else dealer state
+})
+
+passToDealerIfAllFinished :: BlackjackGame -> BlackjackGame
+passToDealerIfAllFinished state = if allPlayersFinished then drawCardsForDealer state else state
+    where
+    allPlayersFinished = all finished (players state)
+
+drawCardsForDealer :: BlackjackGame -> BlackjackGame
+drawCardsForDealer state
+    | dealerHandSize > 21 = state { dealer = (dealer state) { bust = True, finished = True }, gameState = GameOver }
+    | dealerHandSize >= 17 = state { dealer = (dealer state) { finished = True }, gameState = GameOver }
+    | otherwise = drawCardsForDealer(state {   dealer = addCardsToDealer (dealer state) topCards,
+                            deck = newDeck
+                            })
+    where
+    dealerHandSize = getNumberByHand (hand (dealer state))
+    (topCards, newDeck) = getTopCards 1 state ([], deck state)
 
 hittedHitButton :: BlackjackGame -> BlackjackGame
-hittedHitButton state = state { 
+hittedHitButton state = state {
     players = addCardsToPlayer (players state) 0 [head topCards],
     deck = newDeck
     }
     where
     (topCards, newDeck) = getTopCards 1 state ([], deck state)
 
+resetBustStatus :: BlackjackGame -> BlackjackGame -- Resets bust status for players and dealer
+resetBustStatus state = state { players = map (\player -> player { finished = False, bust = False }) (players state),
+                                dealer = (dealer state) { finished = False, bust = False }
+
+}
+
 hittedBetButton :: BlackjackGame -> BlackjackGame
-hittedBetButton state = state {gameState = TakeActionPhase,
+hittedBetButton state = resetBustStatus (state {gameState = TakeActionPhase,
         players = addCardsToPlayer (players state) 0 [head topCards, topCards !! 1], -- Add two cards to player
         dealer = addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3], -- Add cards to dealer
         deck = newDeck
-        }
+        })
     where
     (topCards, newDeck) = getTopCards 4 state ([], deck state)
 
 addCardsToDealer :: Player -> [Card] -> Player
-addCardsToDealer player cardsToAdd = player { hand = Hand { size = size (hand player) + length cardsToAdd ,
-                                                            cards = cards (hand player) ++ cardsToAdd }}
+addCardsToDealer dealer cardsToAdd = dealer { hand = Hand { size = size (hand dealer) + length cardsToAdd ,
+                                                            cards = cards (hand dealer) ++ cardsToAdd }}
 
 addCardsToPlayer :: [Player] -- ^ Player list
   -> Int -- ^ Player to modify (player[int])
