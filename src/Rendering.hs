@@ -4,15 +4,25 @@ import State
 import MysteriousConstants
 import ImageLoader
 import Data.Maybe
+import Types
 
 -- gameAsPicture = pictures []
 drawScreen :: BlackjackGame -> Picture
 drawScreen state
-    | gameState state == BetPhase = pictures (drawButtons state)
-    | gameState state == TakeActionPhase = pictures (drawButtons state ++ drawCards state)
-    | gameState state == GameOver = pictures (drawCards state ++ drawEndGameStatus state )
+    | gameState state == BetPhase = pictures (drawPlayerSelected state ++ drawSlider state : drawSliderInfo state : drawButtons state)
+    | gameState state == TakeActionPhase = pictures (drawButtons state ++ drawCards state ++ drawPlayerSelected state)
+    | gameState state == GameOver = pictures (drawCards state ++ drawEndGameStatus state)
+    | gameState state == SessionOver = drawSessionOver state
     | otherwise = pictures (drawCards state)
 
+
+drawPlayerSelected :: BlackjackGame -> [Picture]
+drawPlayerSelected state = [
+    --translate 0 100 (imageSelectedPlayer $ images state),
+    uncurry translate (playersCardsCenter !! (selectedPlayer state)) (imageCurrentPlayerToken $ images state)]
+
+drawSessionOver :: BlackjackGame -> Picture
+drawSessionOver state = translate 0 0 (imageNoMoneyLeft $ images state)
 
 drawEndGameStatus :: BlackjackGame -> [Picture]
 drawEndGameStatus state = drawWonAndLostPerPlayer state ++ drawBusts state ++ drawStartNewGameButton state
@@ -112,3 +122,17 @@ drawSingleCard card x y imageCards = translate x y (imageCards !! (fromEnum $ ca
 
 drawSmallText :: Color -> String -> Picture
 drawSmallText clr string =  color clr $ scale 0.25 0.25 (text string)
+
+drawSlider :: BlackjackGame -> Picture
+drawSlider state = 
+  uncurry translate sliderOffset $ pictures [sliderImage, ballOnSlider]
+  where
+      sliderImage = imageSlider $ images state
+      ballImage = imageBall $ images state
+      ballOnSlider = translate ballOffset 0 ballImage
+      ballOffset   = (-(fst sliderSize) + 1 * fst sliderSize) / 2 + ballPos (slider state)
+
+drawSliderInfo :: BlackjackGame -> Picture
+drawSliderInfo state = uncurry translate sliderTextOffset number
+    where
+    number = drawSmallText white (show (val $ slider state))

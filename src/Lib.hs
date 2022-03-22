@@ -10,7 +10,7 @@ import System.Random
 
 
 width, height, offset :: Int
-width = 640
+width = 750
 height = 1000
 offset = 100
 

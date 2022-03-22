@@ -17,12 +17,17 @@ bufferBetweenCards :: Float
 bufferBetweenCards = -60
 
 playersCardsCenter, playersCardsNumberCenter, playersEndgameDrawCenter, playersEndgameBustsDrawCenter :: [(Float, Float)]
-playersCardsCenter = [(0, -360)]
-playersCardsNumberCenter = [(-20, -480)]
-playersEndgameDrawCenter = [(0, -250)]
-playersEndgameBustsDrawCenter = [(0, -200)]
+playersCardsCenter =        [(0, -360), (-250, -60), (250, -60)]
+playersCardsNumberCenter =  [(-20, -480), (-270, -180), (270, -180)]
+playersEndgameDrawCenter =  [(0, -250), (-250, 50), (250, 50)]
+playersEndgameBustsDrawCenter = [(0, -200), (-250, 100), (250, 100)]
 --                      p0
 dealerCardsCenter, dealerCardsNumberCenter, dealerEndgameBustsDrawCenter :: (Float, Float)
 dealerCardsCenter = (0, 410)
 dealerCardsNumberCenter = (-20, 230)
 dealerEndgameBustsDrawCenter = (0, 300)
+
+sliderOffset, sliderSize, sliderTextOffset :: (Float, Float)
+sliderOffset = (0,0)
+sliderSize = (300, 15)
+sliderTextOffset = (-20, -50)

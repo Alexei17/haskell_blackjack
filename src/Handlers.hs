@@ -4,6 +4,7 @@ import Graphics.Gloss.Interface.IO.Game
 import Debug.Trace
 import MysteriousConstants
 import Text.ParserCombinators.ReadPrec (reset)
+import Types
 
 debug = flip trace
 
@@ -11,6 +12,10 @@ handleInput :: Event -> BlackjackGame -> BlackjackGame
 handleInput event state =
     case event of
         EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state `debug` show state
+        EventKey (MouseButton LeftButton) Up _ _ -> state { slider = (slider state) { isSelected = False }}
+        EventMotion (x, _) -> if isSelected (slider state)
+            then state { slider = moveSliderBall x (slider state) }
+            else state
         _ -> state
 
 handleClick :: (Float, Float) -> BlackjackGame -> BlackjackGame
@@ -20,15 +25,21 @@ handleClick coords state =
             Just Hit -> checkIfBust (hittedHitButton state) -- checkIfBust checks for busted player and/or finished players.
             Just Stand -> hittedStandButton state
             Just NewGame -> hittedNewGameButton state
+            Just SliderHit -> hittedSlider state coords
             _ -> state `debug` show (players state !! 0)
             `debug` show buttonHitted
     where
         buttonHitted = checkButtonHit coords state `debug` show coords
 
 checkIfBust :: BlackjackGame -> BlackjackGame
-checkIfBust state = passToDealerIfAllFinished ( state { players = map (\player -> if getNumberByHand (hand player) > 21 then player {finished = True, bust = True} else player) (players state),
+checkIfBust state = passToNextPlayerIfCurrentFinished (passToDealerIfAllFinished ( state { players = map (\player -> if getNumberByHand (hand player) > 21 then player {finished = True, bust = True} else player) (players state),
                             dealer = if getNumberByHand (hand (dealer state)) > 21 then (dealer state) {finished = True, bust = True} else dealer state
-})
+}))
+
+passToNextPlayerIfCurrentFinished :: BlackjackGame -> BlackjackGame
+passToNextPlayerIfCurrentFinished state = if finished (players state !! selectedPlayer state)
+                                    then state { selectedPlayer = mod (selectedPlayer state + 1) (length (players state)) }
+                                    else state
 
 passToDealerIfAllFinished :: BlackjackGame -> BlackjackGame
 passToDealerIfAllFinished state = if allPlayersFinished then drawCardsForDealer state else state
@@ -48,36 +59,46 @@ drawCardsForDealer state
 
 determineWinner :: BlackjackGame -> BlackjackGame
 determineWinner state
-    | bust (dealer state) = state { players = -- If dealer is bust, all non bust players win
-        map (\player -> if not (bust player) then player {hasWon = T} else player { hasWon = F }) (players state) }
-    | not (bust (dealer state)) = state { players =  -- If dealer is not bust, all players with a higher count win
+    | bust (dealer state) = handeEndGameBets (state { players = -- If dealer is bust, all non bust players win
+        map (\player -> if not (bust player) then player {hasWon = T} else player { hasWon = F }) (players state) })
+    | not (bust (dealer state)) = handeEndGameBets (state { players =  -- If dealer is not bust, all players with a higher count win
         map (\player ->
             if not (bust player) && getNumberByHand (hand player) > dealerCount then player { hasWon = T }
             else if not (bust player) && getNumberByHand (hand player) == dealerCount then player { hasWon = Tie }
             else player { hasWon = F }
                     ) (players state)
-        }
+        })
     | otherwise = state -- No winner is present yet (this shouldn't happen)
     where
         dealerCount = getNumberByHand (hand (dealer state))
 
+handeEndGameBets :: BlackjackGame -> BlackjackGame
+handeEndGameBets state = state { players = map (\player ->
+    if hasWon player == T then player { balance = balance player - currentBet player + currentBet player * 2 }
+    else if hasWon player == F then player { balance = balance player - currentBet player }
+    else if hasWon player == Blackjack then player { balance = balance player - currentBet player + currentBet player * 3 }
+    else player) (players state)}
 
 hittedNewGameButton :: BlackjackGame -> BlackjackGame
-hittedNewGameButton state = state { gameState = BetPhase,
+hittedNewGameButton state =  updateSliderData ( checkEndGame (state { gameState = BetPhase,
             players = map (\player -> player { hand = emptyHand, bust = False, hasWon = NotDetermined,
             finished = False }) (players state),
             dealer = (dealer state) { hand = emptyHand },
             selectedPlayer = 0
-             }
+            }))
+
+
+checkEndGame :: BlackjackGame -> BlackjackGame
+checkEndGame state = state {players = map (\player -> if balance player <= 0 then player { balance = 1000} else player) (players state)}
 
 hittedStandButton :: BlackjackGame -> BlackjackGame
-hittedStandButton state = passToDealerIfAllFinished (state {
+hittedStandButton state = passToNextPlayerIfCurrentFinished (passToDealerIfAllFinished (state {
     players = map (\player -> if playerPos player == selectedPlayer state then player {finished = True } else player ) (players state)
-})
+}))
 
 hittedHitButton :: BlackjackGame -> BlackjackGame
 hittedHitButton state = state {
-    players = addCardsToPlayer (players state) 0 [head topCards],
+    players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards],
     deck = newDeck
     }
     where
@@ -86,17 +107,25 @@ hittedHitButton state = state {
 resetBustStatus :: BlackjackGame -> BlackjackGame -- Resets bust status for players and dealer
 resetBustStatus state = state { players = map (\player -> player { finished = False, bust = False }) (players state),
                                 dealer = (dealer state) { finished = False, bust = False }
-
 }
 
+sliderDataToBet :: BlackjackGame -> BlackjackGame
+sliderDataToBet state = state { players = map (\player -> if playerPos player == selectedPlayer state
+   then player { currentBet = val $ slider state} else player) (players state) }
+
 hittedBetButton :: BlackjackGame -> BlackjackGame
-hittedBetButton state = resetBustStatus (state {gameState = TakeActionPhase,
-        players = addCardsToPlayer (players state) 0 [head topCards, topCards !! 1], -- Add two cards to player
-        dealer = addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3], -- Add cards to dealer
+hittedBetButton state = updateSliderData (sliderDataToBet (resetBustStatus (changeGameStateOrShift TakeActionPhase (state {
+        players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards, topCards !! 1], -- Add two cards to player
+        dealer = if selectedPlayer state == 0 then addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3] else dealer state, -- Add cards to dealer if it's first players turn
         deck = newDeck
-        })
+        }))))
     where
-    (topCards, newDeck) = getTopCards 4 state ([], deck state)
+    (topCards, newDeck) = if selectedPlayer state == 0 then getTopCards 4 state ([], deck state) else getTopCards 2 state ([], deck state)
+
+changeGameStateOrShift :: State -> BlackjackGame -> BlackjackGame
+changeGameStateOrShift gStateTo state
+    | selectedPlayer state == length (players state) - 1 = state { gameState = gStateTo, selectedPlayer = 0 } -- All players took their turn, can convert to next state
+    | otherwise = state { selectedPlayer = selectedPlayer state + 1 } -- Pass on to next player
 
 addCardsToDealer :: Player -> [Card] -> Player
 addCardsToDealer dealer cardsToAdd = dealer { hand = Hand { size = size (hand dealer) + length cardsToAdd ,
@@ -134,12 +163,14 @@ removeFirst = \myList ->
         [] -> [] -- if the list is empty, return empty list
         x:xs -> xs -- split head and return remaining list
 
-data Button = Bet | Hit | Stand | NewGame  deriving (Eq, Show)
+data Button = Bet | Hit | Stand | NewGame | SliderHit deriving (Eq, Show)
 checkButtonHit :: (Float, Float) -> BlackjackGame -> Maybe Button
 checkButtonHit coords state
     | gameState state == BetPhase = if
         and [x > fst (fst betHitbox), x < fst (snd betHitbox),
         y < snd (fst betHitbox), y > snd (snd betHitbox)] then Just Bet
+        else if and [x > fst (fst sliderHitbox), x < fst (snd sliderHitbox),
+        y < snd (fst sliderHitbox), y > snd (snd sliderHitbox)] then Just SliderHit
         else Nothing `debug` show [x > fst (fst betHitbox), x < snd (fst betHitbox), y > fst (snd betHitbox), y < snd (snd betHitbox)]
     | gameState state == TakeActionPhase = if
         and [x > fst (fst hitHitbox), x < fst (snd hitHitbox),
@@ -161,6 +192,7 @@ checkButtonHit coords state
         hitHitbox = getHitbox hitButtonOffset buttonSize
         standHitbox = getHitbox standButtonOffset buttonSize
         startNewGameHitbox = getHitbox (0,0) buttonSize
+        sliderHitbox = getHitbox sliderOffset sliderSize
 
 
 -- Get hitbox coords: [Top left, Bottom right]
@@ -177,3 +209,49 @@ replaceNth _ _ [] = []
 replaceNth n newVal (x:xs)
     | n == 0 = newVal:xs
     | otherwise = x:replaceNth (n-1) newVal xs
+
+updateSliderData :: BlackjackGame -> BlackjackGame
+updateSliderData state = state {
+    slider = (slider state) {
+        maxVal = balance $ players state !! selectedPlayer state,
+        minVal = 0,
+        val = 0,
+        step = if r == 0
+            then sliderWidth
+            else sliderWidth / (r / 5),
+        ballPos = -150,
+        isSelected = False
+        }}
+        where
+            r = fromIntegral $ balance (players state !! selectedPlayer state)
+            sliderWidth = fst sliderSize - 2 * fst sliderSize
+
+
+hittedSlider :: BlackjackGame -> (Float,Float) -> BlackjackGame
+hittedSlider state pos = state {
+    slider = handleSliderClick (fst pos) (slider state)
+    }
+
+handleSliderClick :: Float -> Slider -> Slider
+handleSliderClick x slider = slider
+    { isSelected   = True
+    , ballPos = -150 + x2
+    , val = bet
+    }
+  where
+    x2 = x + fromIntegral (round sliderHalfWidth)
+    bet = if x2 >= sliderHalfWidth * 2
+      then maxVal slider
+      else minVal slider + abs (floor (x2 / step slider) * 5)
+    sliderHalfWidth  = fst sliderSize / 2
+
+moveSliderBall :: Float -> Slider -> Slider
+moveSliderBall x = handleSliderClick newX
+  where
+    sliderHitBox = getHitbox sliderOffset sliderSize
+    minX = fst $ fst sliderHitBox
+    maxX = fst $ snd sliderHitBox
+    newX
+      | x < minX = minX
+      | x > maxX = maxX
+      | otherwise = x

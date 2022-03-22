@@ -4,25 +4,38 @@ import Data.List
 import System.Random.Shuffle (shuffle')
 import System.Random
 import Control.Monad
+import Types
+import MysteriousConstants
 
 initGameState :: IO BlackjackGame
 initGameState = createGameStateWith <$> loadImages
 
 createGameStateWith :: Images -> BlackjackGame
 createGameStateWith imgs = Game {
-    players = [initInitialPlayer],
-    dealer = initInitialPlayer,
-    gameState = BetPhase,
+    players = [initInitialPlayer 0, initInitialPlayer 1, initInitialPlayer 2],
+    dealer = initInitialPlayer 0,
+    gameState = GameOver,
     images = imgs,
     deck = Hand { size = 0, cards = [] },
-    selectedPlayer = 0
+    selectedPlayer = 0,
+    slider = initSlider
     }
 
-initInitialPlayer :: Player
-initInitialPlayer = Player { hand = emptyHand, balance = 0, currentBet = 0, playerPos = 0, finished = False, bust = False, hasWon = NotDetermined }
+initInitialPlayer :: Int -> Player
+initInitialPlayer n = Player { hand = emptyHand, balance = 1000, currentBet = 0, playerPos = n, finished = False, bust = False, hasWon = NotDetermined }
 
 emptyHand :: Hand
 emptyHand = Hand { cards = [] , size = 0 }
+
+initSlider :: Slider
+initSlider = Slider { 
+    ballPos = -150,
+    isSelected = False,
+    val = 0,
+    minVal = 0,
+    maxVal = 1000,
+    step = 2
+}
 
 data BlackjackGame = Game {
     players :: [Player],
@@ -31,7 +44,8 @@ data BlackjackGame = Game {
     images :: Images,
     deck :: Hand,
     randomGen :: StdGen,
-    selectedPlayer :: Int
+    selectedPlayer :: Int,
+    slider :: Slider
     -- winner :: Winner
 } deriving Show
 
@@ -42,7 +56,7 @@ data Winner = Winner {
 } deriving Show
 
 data PlayerType = TypeDealer | TypePlayer deriving Show
-data State = BetPhase | Running | GameOver | TakeActionPhase deriving (Eq, Show)
+data State = BetPhase | Running | GameOver | TakeActionPhase | SessionOver deriving (Eq, Show)
 data Player = Player {
     hand :: Hand,
     balance :: Int,
@@ -53,7 +67,7 @@ data Player = Player {
     hasWon :: WinType
 } deriving (Show)
 
-data WinType = T | F | Tie | Blackjack | NotDetermined deriving Show
+data WinType = T | F | Tie | Blackjack | NotDetermined deriving (Show, Eq)
 
 data Hand = Hand {
     size :: Int,

@@ -19,6 +19,11 @@ loadImages = do
   imgStartNewGame <- loadJuicyPNG "img/startNewGame.png"
   imgPushed <- loadJuicyPNG "img/pushed.png"
   imgBackCard <- loadJuicyPNG "img/backCard.png"
+  imgSlider <- loadJuicyPNG "img/slider.png"
+  imgBall <- loadJuicyPNG "img/sliderBall.png"
+  imgNoMoneyLeft <- loadJuicyPNG "img/noMoneyLeft.png"
+  imgcurrentPlayerToken <- loadJuicyPNG "img/currentPlayer.png"
+  imgselectedPlayer <- loadJuicyPNG "img/selectedPlayer.png"
   return
     Images
       {
@@ -34,7 +39,12 @@ loadImages = do
         imageYouLost = fromMaybe Blank imgYouLost,
         imagestartNewGame = fromMaybe Blank imgStartNewGame,
         imagePushed = fromMaybe Blank imgPushed,
-        imageBackCard = fromMaybe Blank imgBackCard
+        imageBackCard = fromMaybe Blank imgBackCard,
+        imageSlider = fromMaybe Blank imgSlider,
+        imageBall = fromMaybe Blank imgBall,
+        imageNoMoneyLeft = fromMaybe Blank imgNoMoneyLeft,
+        imageCurrentPlayerToken = fromMaybe Blank imgcurrentPlayerToken,
+        imageSelectedPlayer = fromMaybe Blank imgselectedPlayer
       }
 
 data Images = Images
@@ -51,7 +61,12 @@ data Images = Images
     imageYouLost :: Picture,
     imagestartNewGame :: Picture,
     imagePushed :: Picture,
-    imageBackCard :: Picture
+    imageBackCard :: Picture,
+    imageSlider :: Picture,
+    imageBall :: Picture,
+    imageNoMoneyLeft :: Picture,
+    imageCurrentPlayerToken :: Picture,
+    imageSelectedPlayer :: Picture
   } deriving Show
 
 loadCards :: IO [Picture]
