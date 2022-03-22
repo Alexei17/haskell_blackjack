@@ -64,7 +64,8 @@ drawButtons state --n
     | gameState state == TakeActionPhase =
         [
             uncurry translate hitButtonOffset (imageHitButton $ images state),
-            uncurry translate standButtonOffset (imageStandButton $ images state)
+            uncurry translate standButtonOffset (imageStandButton $ images state),
+            uncurry translate doubleButtonOffset (imageDoubleButton $ images state)
         ]
     | otherwise = [uncurry translate betButtonOffset (imageButton $ images state)]
 

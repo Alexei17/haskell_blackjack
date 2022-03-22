@@ -24,6 +24,7 @@ handleClick coords state =
             Just Bet -> hittedBetButton state `debug` show (players state !! 0)
             Just Hit -> checkIfBust (hittedHitButton state) -- checkIfBust checks for busted player and/or finished players.
             Just Stand -> hittedStandButton state
+            Just Double -> checkIfBust (hittedDoubleButton state)
             Just NewGame -> hittedNewGameButton state
             Just SliderHit -> hittedSlider state coords
             _ -> state `debug` show (players state !! 0)
@@ -63,7 +64,8 @@ determineWinner state
         map (\player -> if not (bust player) then player {hasWon = T} else player { hasWon = F }) (players state) })
     | not (bust (dealer state)) = handeEndGameBets (state { players =  -- If dealer is not bust, all players with a higher count win
         map (\player ->
-            if not (bust player) && getNumberByHand (hand player) > dealerCount then player { hasWon = T }
+            if not (bust player) && getNumberByHand (hand player) == 21 && size (hand player) == 2 then player { hasWon = Blackjack }
+            else if not (bust player) && getNumberByHand (hand player) > dealerCount then player { hasWon = T }
             else if not (bust player) && getNumberByHand (hand player) == dealerCount then player { hasWon = Tie }
             else player { hasWon = F }
                     ) (players state)
@@ -91,6 +93,14 @@ hittedNewGameButton state =  updateSliderData ( checkEndGame (state { gameState 
 checkEndGame :: BlackjackGame -> BlackjackGame
 checkEndGame state = state {players = map (\player -> if balance player <= 0 then player { balance = 1000} else player) (players state)}
 
+hittedDoubleButton :: BlackjackGame -> BlackjackGame -- Doubling is the same as hitting and standing, but double the balance.
+hittedDoubleButton state = hittedStandButton ( state {
+    players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards] True,
+    deck = newDeck
+    })
+    where
+    (topCards, newDeck) = getTopCards 1 state ([], deck state)
+
 hittedStandButton :: BlackjackGame -> BlackjackGame
 hittedStandButton state = passToNextPlayerIfCurrentFinished (passToDealerIfAllFinished (state {
     players = map (\player -> if playerPos player == selectedPlayer state then player {finished = True } else player ) (players state)
@@ -98,7 +108,7 @@ hittedStandButton state = passToNextPlayerIfCurrentFinished (passToDealerIfAllFi
 
 hittedHitButton :: BlackjackGame -> BlackjackGame
 hittedHitButton state = state {
-    players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards],
+    players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards] False,
     deck = newDeck
     }
     where
@@ -115,7 +125,7 @@ sliderDataToBet state = state { players = map (\player -> if playerPos player ==
 
 hittedBetButton :: BlackjackGame -> BlackjackGame
 hittedBetButton state = updateSliderData (sliderDataToBet (resetBustStatus (changeGameStateOrShift TakeActionPhase (state {
-        players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards, topCards !! 1], -- Add two cards to player
+        players = addCardsToPlayer (players state) (selectedPlayer state) [head topCards, topCards !! 1] False, -- Add two cards to player
         dealer = if selectedPlayer state == 0 then addCardsToDealer (dealer state) [topCards !! 2, topCards !! 3] else dealer state, -- Add cards to dealer if it's first players turn
         deck = newDeck
         }))))
@@ -134,11 +144,13 @@ addCardsToDealer dealer cardsToAdd = dealer { hand = Hand { size = size (hand de
 addCardsToPlayer :: [Player] -- ^ Player list
   -> Int -- ^ Player to modify (player[int])
   -> [Card] -- ^ Cards to add
+  -> Bool -- ^ came from double button
   -> [Player]
-addCardsToPlayer players n cardsToAdd = replaceNth n (player { hand =
+addCardsToPlayer players n cardsToAdd doubleButton = replaceNth n (player { hand =
                                                                      Hand {
                                                                          size = size (hand player) + length cardsToAdd,
-                                                                         cards = cards (hand player) ++ cardsToAdd }
+                                                                         cards = cards (hand player) ++ cardsToAdd },
+                                                                    currentBet = if doubleButton then currentBet player * 2 else currentBet player
                                                             }) players
     where
         player = players !! n
@@ -163,7 +175,7 @@ removeFirst = \myList ->
         [] -> [] -- if the list is empty, return empty list
         x:xs -> xs -- split head and return remaining list
 
-data Button = Bet | Hit | Stand | NewGame | SliderHit deriving (Eq, Show)
+data Button = Bet | Hit | Stand | NewGame | SliderHit | Double deriving (Eq, Show)
 checkButtonHit :: (Float, Float) -> BlackjackGame -> Maybe Button
 checkButtonHit coords state
     | gameState state == BetPhase = if
@@ -178,6 +190,9 @@ checkButtonHit coords state
         else if
         and [x > fst (fst standHitbox), x < fst (snd standHitbox),
         y < snd (fst standHitbox), y > snd (snd standHitbox)] then Just Stand
+        else if
+        and [x > fst (fst doubleHitbox), x < fst (snd doubleHitbox),
+        y < snd (fst doubleHitbox), y > snd (snd doubleHitbox)] then Just Double
         else Nothing
     | gameState state == GameOver = if
         and [x > fst (fst startNewGameHitbox), x < fst (snd startNewGameHitbox),
@@ -192,6 +207,7 @@ checkButtonHit coords state
         hitHitbox = getHitbox hitButtonOffset buttonSize
         standHitbox = getHitbox standButtonOffset buttonSize
         startNewGameHitbox = getHitbox (0,0) buttonSize
+        doubleHitbox = getHitbox doubleButtonOffset buttonSize
         sliderHitbox = getHitbox sliderOffset sliderSize
 
 
