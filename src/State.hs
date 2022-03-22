@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-missing-fields #-}
 module State where
 import ImageLoader
 import Data.List
@@ -7,12 +8,12 @@ import Control.Monad
 import Types
 import MysteriousConstants
 
-initGameState :: IO BlackjackGame
-initGameState = createGameStateWith <$> loadImages
+initGameState :: Int -> IO BlackjackGame
+initGameState n = createGameStateWith n <$> loadImages
 
-createGameStateWith :: Images -> BlackjackGame
-createGameStateWith imgs = Game {
-    players = [initInitialPlayer 0, initInitialPlayer 1, initInitialPlayer 2],
+createGameStateWith :: Int -> Images -> BlackjackGame
+createGameStateWith n imgs = Game {
+    players = map initInitialPlayer [0..n-1],
     dealer = initInitialPlayer 0,
     gameState = GameOver,
     images = imgs,
@@ -28,7 +29,7 @@ emptyHand :: Hand
 emptyHand = Hand { cards = [] , size = 0 }
 
 initSlider :: Slider
-initSlider = Slider { 
+initSlider = Slider {
     ballPos = -150,
     isSelected = False,
     val = 0,
@@ -36,86 +37,6 @@ initSlider = Slider {
     maxVal = 1000,
     step = 2
 }
-
-data BlackjackGame = Game {
-    players :: [Player],
-    dealer :: Player,
-    gameState :: State,
-    images :: Images,
-    deck :: Hand,
-    randomGen :: StdGen,
-    selectedPlayer :: Int,
-    slider :: Slider
-    -- winner :: Winner
-} deriving Show
-
-data Winner = Winner {
-    present :: Bool,
-    typeOf :: PlayerType,
-    winners :: [Player]
-} deriving Show
-
-data PlayerType = TypeDealer | TypePlayer deriving Show
-data State = BetPhase | Running | GameOver | TakeActionPhase | SessionOver deriving (Eq, Show)
-data Player = Player {
-    hand :: Hand,
-    balance :: Int,
-    currentBet :: Int,
-    playerPos :: Int,
-    finished :: Bool,
-    bust :: Bool,
-    hasWon :: WinType
-} deriving (Show)
-
-data WinType = T | F | Tie | Blackjack | NotDetermined deriving (Show, Eq)
-
-data Hand = Hand {
-    size :: Int,
-    cards :: [Card]
-} deriving (Show)
-
-data Card = Card {
-              cardRank :: CardRank,
-              cardSuit :: CardSuit
-} deriving (Eq, Show, Ord)
-
-instance Enum Card where
-  toEnum index = Card
-    { cardRank = toEnum $ index `div` 4
-    , cardSuit     = toEnum $ index `mod` 4
-    }
-  fromEnum card = fromEnum (cardRank card) * 4 + fromEnum (cardSuit card)
-
-
-data CardRank
-    = Two
-    | Three
-    | Four
-    | Five
-    | Six
-    | Seven
-    | Eight
-    | Nine
-    | Ace
-    | Jack
-    | King
-    | Queen
-    | Ten
-    deriving (Eq, Ord, Bounded, Enum, Show)
-
-data CardSuit
-    = Clubs
-    | Diamonds
-    | Hearts
-    | Spades
-    deriving (Eq, Ord, Bounded, Enum, Show)
-
-cardRanks :: [CardRank]
-cardRanks = [minBound..maxBound]
-
-cardSuits :: [CardSuit]
-cardSuits = [minBound..maxBound]
-
 
 shuffle gen [] = []
 shuffle gen list = randomElem : shuffle newGen newList
