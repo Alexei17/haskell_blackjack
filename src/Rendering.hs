@@ -48,7 +48,7 @@ imageToDrawByWinType state player = case hasWon player of
         F -> imageYouLost $ images state
         Tie -> imagePushed $ images state
         Blackjack -> imageYouWon $ images state
-        _ -> imageYouLost $ images state
+        _ -> Blank
 
 drawButton :: BlackjackGame -> Picture
 drawButton state = uncurry translate betButtonOffset (imageButton $ images state)
@@ -70,7 +70,8 @@ drawButtons state --n
     | otherwise = [uncurry translate betButtonOffset (imageButton $ images state)]
 
 drawCards :: BlackjackGame -> [Picture]
-drawCards state = drawCardsForDealer (dealer state) (imageCards (images state)) (images state) shouldHideCard ++ concatMap (\player -> drawCardsForPlayer player (imageCards (images state))) (players state)
+drawCards state = drawCardsForDealer (dealer state) (imageCards (images state)) (images state) shouldHideCard ++ 
+                    concatMap (\player -> drawCardsForPlayer player (imageCards (images state))) (players state)
     where
     shouldHideCard = gameState state == TakeActionPhase
 
@@ -91,12 +92,14 @@ drawCardsForPlayer player imageCards = drawPlayerCardCount player : map (\(card,
 drawDealerCardCount :: Player -> Picture
 drawDealerCardCount player = uncurry translate dealerCardsNumberCenter number
     where
-        number = drawSmallText white (show (getNumberByHand (hand player)))
+        handNum = getNumberByHand (hand player)
+        number = if handNum == 0 then Blank else drawSmallText white (show (getNumberByHand (hand player)))
 
 drawPlayerCardCount :: Player -> Picture
 drawPlayerCardCount player =  uncurry translate (playersCardsNumberCenter !! playerPos player) number
     where
-        number = drawSmallText white (show (getNumberByHand (hand player)))
+        handNum = getNumberByHand (hand player)
+        number = if handNum == 0 then Blank else drawSmallText white (show handNum)
 
 drawCardsForDealer :: Player -> [Picture] -> Images -> Bool -> [Picture]
 drawCardsForDealer player imageCards images hideOneCard =
