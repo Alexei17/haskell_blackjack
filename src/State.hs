@@ -1,10 +1,8 @@
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 module State where
 import ImageLoader
-import Data.List
 import System.Random.Shuffle (shuffle')
 import System.Random
-import Control.Monad
 import Types
 import MysteriousConstants
 
@@ -62,7 +60,7 @@ createShuffledDeck state = Hand {
 }
 
 getNumberByHand :: Hand -> Int
-getNumberByHand hand
+getNumberByHand hand_
   | acesCount < 2 =
     if countMaxAce > 21 then countMinAce else countMaxAce
   | acesCount >= 2 =
@@ -71,18 +69,16 @@ getNumberByHand hand
         else countAcesAs cards_ (11 + acesCount - 1)
   | otherwise = 100
   where
-      cards_ = cards hand
-      acesCount = length (filter (\ card -> cardRank card == Ace) (cards hand))
-      countMaxAce = sum (map (`getNumberByCard` True) (cards hand))
-      countMinAce = sum (map (`getNumberByCard` False) (cards hand))
-      countTwoAces_as2
-        = 2 + sum (map (`getNumberByCard` False) (cards hand))
+      cards_ = cards hand_
+      acesCount = length (filter (\ card -> cardRank card == Ace) (cards hand_))
+      countMaxAce = sum (map (`getNumberByCard` True) (cards hand_))
+      countMinAce = sum (map (`getNumberByCard` False) (cards hand_))
 
 
 countAcesAs :: [Card] -> Int -> Int
-countAcesAs cards n = n + sum (map (`getNumberByCard` False) handWithoutAces)
+countAcesAs cards_ n = n + sum (map (`getNumberByCard` False) handWithoutAces)
     where
-    handWithoutAces = filter (\card -> cardRank card /=  Ace) cards
+    handWithoutAces = filter (\card -> cardRank card /=  Ace) cards_
 
 getNumberByCard :: Card -> Bool -> Int
 getNumberByCard card maxAce = case cardRank card of

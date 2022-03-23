@@ -1,17 +1,18 @@
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 module Handlers where
 import State
 import Graphics.Gloss.Interface.IO.Game
 import Debug.Trace
 import MysteriousConstants
-import Text.ParserCombinators.ReadPrec (reset)
 import Types
 
+debug :: c -> String -> c
 debug = flip trace
 
 handleInput :: Event -> BlackjackGame -> BlackjackGame
 handleInput event state =
     case event of
-        EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state `debug` show state
+        EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state -- `debug` show state
         EventKey (MouseButton LeftButton) Up _ _ -> state { 
             slider = (slider state) { isSelected = False }
             }
@@ -23,17 +24,17 @@ handleInput event state =
 handleClick :: (Float, Float) -> BlackjackGame -> BlackjackGame
 handleClick coords state =
         case buttonHitted of
-            Just Bet -> hittedBetButton state `debug` show (players state !! 0)
+            Just Bet -> hittedBetButton state -- `debug` show (players state !! 0)
             Just Hit -> checkIfBust (hittedHitButton state) 
             -- checkIfBust checks for busted player and/or finished players.
             Just Stand -> hittedStandButton state
             Just Double -> checkIfBust (hittedDoubleButton state)
             Just NewGame -> hittedNewGameButton state
             Just SliderHit -> hittedSlider state coords
-            _ -> state `debug` show (players state !! 0)
-            `debug` show buttonHitted
+            _ -> state -- `debug` show (players state !! 0)
+            -- `debug` show buttonHitted
     where
-        buttonHitted = checkButtonHit coords state `debug` show coords
+        buttonHitted = checkButtonHit coords state -- `debug` show coords
 
 checkIfBust :: BlackjackGame -> BlackjackGame
 checkIfBust state = passToNextPlayerIfCurrentFinished 
@@ -170,34 +171,34 @@ changeGameStateOrShift gStateTo state
     | otherwise = state { selectedPlayer = selectedPlayer state + 1 } -- Pass on to next player
 
 addCardsToDealer :: Player -> [Card] -> Player
-addCardsToDealer dealer cardsToAdd = dealer { hand = Hand { 
-    size = size (hand dealer) + length cardsToAdd ,
-    cards = cards (hand dealer) ++ cardsToAdd }}
+addCardsToDealer dealer_ cardsToAdd = dealer_ { hand = Hand { 
+    size = size (hand dealer_) + length cardsToAdd ,
+    cards = cards (hand dealer_) ++ cardsToAdd }}
 
 addCardsToPlayer :: [Player] -- ^ Player list
   -> Int -- ^ Player to modify (player[int])
   -> [Card] -- ^ Cards to add
   -> Bool -- ^ came from double button
   -> [Player]
-addCardsToPlayer players n cardsToAdd doubleButton = replaceNth n (player { hand =
+addCardsToPlayer players_ n cardsToAdd doubleButton = replaceNth n (player { hand =
                                                                      Hand {
 size = size (hand player) + length cardsToAdd,
 cards = cards (hand player) ++ cardsToAdd },
 currentBet = if doubleButton then currentBet player * 2 else currentBet player
-                                                            }) players
+                                                            }) players_
     where
-        player = players !! n
+        player = players_ !! n
 
 
 -- | Get top n cards, return new cards and updated deck
 -- | Number of cards to return -> State -> (deckToReturn, deckToDrawFrom)
 getTopCards :: Int -> BlackjackGame -> ([Card], Hand) -> ([Card], Hand)
-getTopCards n state (deckToReturn, deck)
-  | n == 0 = (deckToReturn, deck) -- Finished recursion, return  the new info
-  | size deck == 0 = getTopCards n state (deckToReturn, createShuffledDeck state) -- There are no cards to draw, reshuffle and call again
+getTopCards n state (deckToReturn, deck_)
+  | n == 0 = (deckToReturn, deck_) -- Finished recursion, return  the new info
+  | size deck_ == 0 = getTopCards n state (deckToReturn, createShuffledDeck state) -- There are no cards to draw, reshuffle and call again
   | otherwise = -- Otherwise add 1 card to the deck to return and call this function again
-    getTopCards (n-1) state (deckToReturn ++ [head (cards deck)],
-                                Hand { size = size deck - 1, cards = removeFirst (cards deck)})
+    getTopCards (n-1) state (deckToReturn ++ [head (cards deck_)],
+                                Hand { size = size deck_ - 1, cards = removeFirst (cards deck_)})
 
 
 
@@ -206,7 +207,7 @@ removeFirst :: [a] -> [a]
 removeFirst = \myList ->
     case myList of
         [] -> [] -- if the list is empty, return empty list
-        x:xs -> xs -- split head and return remaining list
+        _:xs -> xs -- split head and return remaining list
 
 data Button = Bet | Hit | Stand | NewGame | SliderHit | Double deriving (Eq, Show)
 checkButtonHit :: (Float, Float) -> BlackjackGame -> Maybe Button
@@ -246,12 +247,12 @@ checkButtonHit coords state
 
 -- Get hitbox coords: [Top left, Bottom right]
 getHitbox :: (Float, Float) -> (Float, Float) -> ((Float, Float), (Float, Float))
-getHitbox offset size = ((x - w/2, y + h/2), (x + w/2, y - h/2))
+getHitbox offset size_ = ((x - w/2, y + h/2), (x + w/2, y - h/2))
     where
         x = fst offset
         y = snd offset
-        w = fst size
-        h = snd size
+        w = fst size_
+        h = snd size_
 
 replaceNth :: Int -> a -> [a] -> [a]
 replaceNth _ _ [] = []
@@ -282,7 +283,7 @@ hittedSlider state pos = state {
     }
 
 handleSliderClick :: Float -> Slider -> Slider
-handleSliderClick x slider = slider
+handleSliderClick x slider_ = slider_
     { isSelected   = True
     , ballPos = -150 + x2
     , val = bet
@@ -290,8 +291,8 @@ handleSliderClick x slider = slider
   where
     x2 = x + fromIntegral (round sliderHalfWidth)
     bet = if x2 >= sliderHalfWidth * 2
-      then maxVal slider
-      else minVal slider + abs (floor (x2 / step slider) * 5)
+      then maxVal slider_
+      else minVal slider_ + abs (floor (x2 / step slider_) * 5)
     sliderHalfWidth  = fst sliderSize / 2
 
 moveSliderBall :: Float -> Slider -> Slider
