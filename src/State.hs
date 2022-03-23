@@ -23,7 +23,14 @@ createGameStateWith n imgs = Game {
     }
 
 initInitialPlayer :: Int -> Player
-initInitialPlayer n = Player { hand = emptyHand, balance = 1000, currentBet = 0, playerPos = n, finished = False, bust = False, hasWon = NotDetermined }
+initInitialPlayer n = Player { 
+  hand = emptyHand, 
+  balance = 1000, 
+  currentBet = 0, 
+  playerPos = n, 
+  finished = False, 
+  bust = False, 
+  hasWon = NotDetermined }
 
 emptyHand :: Hand
 emptyHand = Hand { cards = [] , size = 0 }
