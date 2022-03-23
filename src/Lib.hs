@@ -1,9 +1,10 @@
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 module Lib
 where
 
 import Graphics.Gloss
 import State
-import Types
+import Types hiding (images)
 import ImageLoader
 import Rendering
 import Handlers
@@ -26,15 +27,17 @@ width = 750
 height = 1000
 offset = 100
 
+window :: Display
 window = InWindow "Blackjack" (width, height) (offset, offset)
 
+backgroundColor :: Color
 backgroundColor = makeColorI 4 135 82 255
 
-initialGame = undefined
 
 drawing :: Picture
 drawing = circle 80
 
+transformGame :: p1 -> p2 -> p2
 transformGame _ game = game
 
 runGame :: IO ()
