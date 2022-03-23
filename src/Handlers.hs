@@ -12,7 +12,7 @@ debug = flip trace
 handleInput :: Event -> BlackjackGame -> BlackjackGame
 handleInput event state =
     case event of
-        EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state `debug` show state
+        EventKey (MouseButton LeftButton) Down _ coords -> handleClick coords state -- `debug` show state
         EventKey (MouseButton LeftButton) Up _ _ -> state { 
             slider = (slider state) { isSelected = False }
             }
@@ -24,17 +24,17 @@ handleInput event state =
 handleClick :: (Float, Float) -> BlackjackGame -> BlackjackGame
 handleClick coords state =
         case buttonHitted of
-            Just Bet -> hittedBetButton state `debug` show (players state !! 0)
+            Just Bet -> hittedBetButton state -- `debug` show (players state !! 0)
             Just Hit -> checkIfBust (hittedHitButton state) 
             -- checkIfBust checks for busted player and/or finished players.
             Just Stand -> hittedStandButton state
             Just Double -> checkIfBust (hittedDoubleButton state)
             Just NewGame -> hittedNewGameButton state
             Just SliderHit -> hittedSlider state coords
-            _ -> state `debug` show (players state !! 0)
-            `debug` show buttonHitted
+            _ -> state -- `debug` show (players state !! 0)
+            -- `debug` show buttonHitted
     where
-        buttonHitted = checkButtonHit coords state `debug` show coords
+        buttonHitted = checkButtonHit coords state -- `debug` show coords
 
 checkIfBust :: BlackjackGame -> BlackjackGame
 checkIfBust state = passToNextPlayerIfCurrentFinished 
@@ -180,14 +180,14 @@ addCardsToPlayer :: [Player] -- ^ Player list
   -> [Card] -- ^ Cards to add
   -> Bool -- ^ came from double button
   -> [Player]
-addCardsToPlayer players n cardsToAdd doubleButton = replaceNth n (player { hand =
+addCardsToPlayer players_ n cardsToAdd doubleButton = replaceNth n (player { hand =
                                                                      Hand {
 size = size (hand player) + length cardsToAdd,
 cards = cards (hand player) ++ cardsToAdd },
 currentBet = if doubleButton then currentBet player * 2 else currentBet player
-                                                            }) players
+                                                            }) players_
     where
-        player = players !! n
+        player = players_ !! n
 
 
 -- | Get top n cards, return new cards and updated deck

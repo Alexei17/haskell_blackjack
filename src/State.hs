@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 module State where
 import ImageLoader
+import System.Random.Shuffle (shuffle')
 import System.Random
 import Types
 
@@ -58,7 +59,7 @@ createShuffledDeck state = Hand {
 }
 
 getNumberByHand :: Hand -> Int
-getNumberByHand hand3
+getNumberByHand hand_
   | acesCount < 2 =
     if countMaxAce > 21 then countMinAce else countMaxAce
   | acesCount >= 2 =
@@ -67,16 +68,16 @@ getNumberByHand hand3
         else countAcesAs cards_ (11 + acesCount - 1)
   | otherwise = 100
   where
-      cards_ = cards hand3
-      acesCount = length (filter (\ card -> cardRank card == Ace) (cards hand3))
-      countMaxAce = sum (map (`getNumberByCard` True) (cards hand3))
-      countMinAce = sum (map (`getNumberByCard` False) (cards hand3))
+      cards_ = cards hand_
+      acesCount = length (filter (\ card -> cardRank card == Ace) (cards hand_))
+      countMaxAce = sum (map (`getNumberByCard` True) (cards hand_))
+      countMinAce = sum (map (`getNumberByCard` False) (cards hand_))
 
 
 countAcesAs :: [Card] -> Int -> Int
-countAcesAs cards2 n = n + sum (map (`getNumberByCard` False) handWithoutAces)
+countAcesAs cards_ n = n + sum (map (`getNumberByCard` False) handWithoutAces)
     where
-    handWithoutAces = filter (\card -> cardRank card /=  Ace) cards2
+    handWithoutAces = filter (\card -> cardRank card /=  Ace) cards_
 
 getNumberByCard :: Card -> Bool -> Int
 getNumberByCard card maxAce = case cardRank card of
