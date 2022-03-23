@@ -1,12 +1,8 @@
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 module State where
 import ImageLoader
-import Data.List
-import System.Random.Shuffle (shuffle')
 import System.Random
-import Control.Monad
 import Types
-import MysteriousConstants
 
 initGameState :: Int -> IO BlackjackGame
 initGameState n = createGameStateWith n <$> loadImages
@@ -45,7 +41,7 @@ initSlider = Slider {
     step = 2
 }
 
-shuffle gen [] = []
+shuffle :: RandomGen t => t -> [a] -> [a]
 shuffle gen list = randomElem : shuffle newGen newList
   where
    randomTuple = randomR (0,length list - 1) gen
@@ -62,7 +58,7 @@ createShuffledDeck state = Hand {
 }
 
 getNumberByHand :: Hand -> Int
-getNumberByHand hand
+getNumberByHand hand3
   | acesCount < 2 =
     if countMaxAce > 21 then countMinAce else countMaxAce
   | acesCount >= 2 =
@@ -71,18 +67,16 @@ getNumberByHand hand
         else countAcesAs cards_ (11 + acesCount - 1)
   | otherwise = 100
   where
-      cards_ = cards hand
-      acesCount = length (filter (\ card -> cardRank card == Ace) (cards hand))
-      countMaxAce = sum (map (`getNumberByCard` True) (cards hand))
-      countMinAce = sum (map (`getNumberByCard` False) (cards hand))
-      countTwoAces_as2
-        = 2 + sum (map (`getNumberByCard` False) (cards hand))
+      cards_ = cards hand3
+      acesCount = length (filter (\ card -> cardRank card == Ace) (cards hand3))
+      countMaxAce = sum (map (`getNumberByCard` True) (cards hand3))
+      countMinAce = sum (map (`getNumberByCard` False) (cards hand3))
 
 
 countAcesAs :: [Card] -> Int -> Int
-countAcesAs cards n = n + sum (map (`getNumberByCard` False) handWithoutAces)
+countAcesAs cards2 n = n + sum (map (`getNumberByCard` False) handWithoutAces)
     where
-    handWithoutAces = filter (\card -> cardRank card /=  Ace) cards
+    handWithoutAces = filter (\card -> cardRank card /=  Ace) cards2
 
 getNumberByCard :: Card -> Bool -> Int
 getNumberByCard card maxAce = case cardRank card of

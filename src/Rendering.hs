@@ -83,8 +83,8 @@ drawCards state = drawCardsForDealer
     shouldHideCard = gameState state == TakeActionPhase
 
 drawCardsForPlayer :: Player -> [Picture] -> [Picture]
-drawCardsForPlayer player imageCards = 
-    drawPlayerCardCount player : map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards) 
+drawCardsForPlayer player imageCards_ = 
+    drawPlayerCardCount player : map (\(card,xPos) -> drawSingleCard card xPos cardsAreaY imageCards_)
     zippedList
     where
     cardsAreaCenter = playersCardsCenter !! playerPos player
